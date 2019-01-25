@@ -34,9 +34,9 @@
             return aria2TaskService.newUriTasks(tasks, pauseOnAdded, responseCallback);
         };
 
-        var downloadByTorrent = function (pauseOnAdded, responseCallback) {
+        var downloadByTorrent = function (file,pauseOnAdded, responseCallback) {
             var task = {
-                content: $scope.context.uploadFile.base64Content,
+                content: file.base64Content,
                 options: angular.copy($scope.context.options)
             };
 
@@ -130,7 +130,8 @@
         $scope.openTorrent = function () {
             ariaNgFileService.openFileContent({
                 fileFilter: '.torrent',
-                fileType: 'binary'
+                fileType: 'binary',
+                multiple: 'multiple'
             }, function (result) {
                 $scope.context.uploadFile = result;
                 $scope.context.taskType = 'torrent';
@@ -177,11 +178,15 @@
                     }
                 }
             };
-
             if ($scope.context.taskType === 'urls') {
                 $rootScope.loadPromise = downloadByLinks(pauseOnAdded, responseCallback);
             } else if ($scope.context.taskType === 'torrent') {
-                $rootScope.loadPromise = downloadByTorrent(pauseOnAdded, responseCallback);
+                for(let i=0;i<$scope.context.uploadFile.length;i++){
+                    let file = $scope.context.uploadFile[i]
+                    setTimeout(function(){
+                        $rootScope.loadPromise = downloadByTorrent(file,pauseOnAdded, responseCallback);
+                    },500*i)
+                }
             } else if ($scope.context.taskType === 'metalink') {
                 $rootScope.loadPromise = downloadByMetalink(pauseOnAdded, responseCallback);
             }

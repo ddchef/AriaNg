@@ -77,6 +77,10 @@
                     element.attr('accept', options.fileFilter);
                 }
 
+                if (options.multiple) {
+                    element.attr('multiple', options.multiple);
+                }
+
                 element.val('');
 
                 if (element.attr('data-ariang-file-initialized') !== 'true') {
@@ -84,54 +88,58 @@
                         if (!this.files || this.files.length < 1) {
                             return;
                         }
+                        let length = this.files.length
+                        var result = []
+                        for(let i=0;i<length;i++){
+                            let file = this.files[i]
+                            let fileName = file.name;
 
-                        var file = this.files[0];
-                        var fileName = file.name;
+                            if (!checkFileExtension(fileName, allowedExtensions)) {
+                                if (errorCallback) {
+                                    errorCallback('The selected file type is invalid!');
+                                }
 
-                        if (!checkFileExtension(fileName, allowedExtensions)) {
-                            if (errorCallback) {
-                                errorCallback('The selected file type is invalid!');
+                                return;
                             }
 
-                            return;
-                        }
+                            let reader = new FileReader();
+                            reader.onload = function () {
+                                let item = {
+                                    fileName: fileName
+                                };
 
-                        var reader = new FileReader();
+                                switch (options.fileType) {
+                                    case 'text':
+                                        item.content = this.result;
+                                        break;
+                                    case 'binary':
+                                    default:
+                                        item.base64Content = this.result.replace(/.*?base64,/, '');
+                                        break;
+                                }
+                                result.push(item)
+                                if (successCallback&&result.length == length) {
+                                    console.log(result)
+                                    console.log(result.length)
+                                    successCallback(result);
+                                }
+                            };
 
-                        reader.onload = function () {
-                            var result = {
-                                fileName: fileName
+                            reader.onerror = function () {
+                                if (errorCallback) {
+                                    errorCallback('Failed to load file!');
+                                }
                             };
 
                             switch (options.fileType) {
                                 case 'text':
-                                    result.content = this.result;
+                                    reader.readAsText(file);
                                     break;
                                 case 'binary':
                                 default:
-                                    result.base64Content = this.result.replace(/.*?base64,/, '');
+                                    reader.readAsDataURL(file);
                                     break;
                             }
-
-                            if (successCallback) {
-                                successCallback(result);
-                            }
-                        };
-
-                        reader.onerror = function () {
-                            if (errorCallback) {
-                                errorCallback('Failed to load file!');
-                            }
-                        };
-
-                        switch (options.fileType) {
-                            case 'text':
-                                reader.readAsText(file);
-                                break;
-                            case 'binary':
-                            default:
-                                reader.readAsDataURL(file);
-                                break;
                         }
                     }).attr('data-ariang-file-initialized', 'true');
                 }
